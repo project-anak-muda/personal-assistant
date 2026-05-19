@@ -6,7 +6,6 @@ from langchain.agents.middleware import (
 
 from models.llm import get_model
 from constants.config import MIDDLEWARE_LIST_TOOLS
-from services.middlewares.skill import SkillMiddleware
 
 
 def compile_hitl(
@@ -61,6 +60,4 @@ MAPPING_MIDDLEWARE = {
         ),
     "hitl": \
         compile_hitl,
-    "skill": \
-        SkillMiddleware()
 }

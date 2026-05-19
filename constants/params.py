@@ -1,33 +1,22 @@
-from typing import TypedDict, Literal
+from typing import List, Optional
 from pydantic import BaseModel, Field
-from langgraph.graph import MessagesState
+
 
 class ChatbotParams(BaseModel):
-    session_id: str
-    query: str
-
-class Skill(TypedDict):
-    name: str
-    description: str
-    content: str
-
-class ParsingOutput(BaseModel):
-    """Individual message component in the response"""
-    type: Literal["info", "success", "error", "warning", "data"] = Field(
-        description="Type of message being returned"
+    session_id: str = Field(description="Conversation/thread id")
+    query: str = Field(description="User's text input")
+    image_base64: Optional[str] = Field(
+        default=None,
+        description="Optional base64-encoded image (no data URI prefix needed)",
     )
-    message: str = Field(
-        description="The actual message content or data to display"
+    image_mime: Optional[str] = Field(
+        default="image/jpeg",
+        description="MIME type of the image, e.g. image/jpeg or image/png",
     )
-
-class GradeDocuments(BaseModel):  
-    """Grade documents using a binary score for relevance check."""
-    binary_score: str = Field(
-        description="Relevance score: 'yes' if relevant, or 'no' if not relevant"
+    
+class SplitItem(BaseModel):
+    name: str = Field(description="Name of the item")
+    price: float = Field(description="Price of the item (before tax/service)")
+    shared_by: List[str] = Field(
+        description="Names of participants who consumed this item"
     )
-
-class RAGState(MessagesState):
-    query: str
-    retrieved_docs: list[str]
-    final_answer: str
-    iteration_count: int

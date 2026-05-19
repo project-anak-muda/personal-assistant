@@ -2,9 +2,8 @@ import os
 import json
 
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any, Dict, List
-
-from utils.helpers import read_skill_md
 
 
 def parse_value(value: str) -> Any:
@@ -36,6 +35,8 @@ def all_env_variables(prefix: str = None) -> Dict[str, Any]:
 PATH = (Path(__file__)).resolve()
 PATH = '/'.join(str(PATH).split('/')[:-2])
 
+TIMEZONE = ZoneInfo("Asia/Jakarta")
+
 MIDDLEWARE_LIST_TOOLS = {}
 
 USED_MIDDLEWARE = [
@@ -43,15 +44,13 @@ USED_MIDDLEWARE = [
     'hitl'
 ]
 
-SKILLS = [
-    {
-        "name": "ticketing_system",
-        "description": "Database schema and business logic for ticketing system including ticket management, priorities, and status tracking.",
-    }
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
 ]
 
-for skill in SKILLS:
-    path_skill_md = f"{PATH}/services/skills/{skill['name']}.md"
-    skill["content"] = read_skill_md(path_skill_md)
+SPENDING_SHEET = os.getenv("SPENDING_WORKSHEET", "Spending")
+BANK_INFO_SHEET = os.getenv("BANK_INFO_WORKSHEET", "BankInfo")
+WHITELIST_USERS_SHEET = os.getenv("WHITELIST_USERS_WORKSHEET", "WhitelistUsername")
 
-MAX_REWRITE_ITERATIONS = int(os.getenv('MAX_REWRITE_ITERATIONS'))
+POLL_TIMEOUT = 30

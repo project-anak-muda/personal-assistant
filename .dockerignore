@@ -1,0 +1,14 @@
+.git
+.gitignore
+.env
+*.pyc
+__pycache__
+.venv
+venv
+.vscode
+.idea
+*.ipynb
+imgs/
+README.md
+LICENSE
+requirements.txt
