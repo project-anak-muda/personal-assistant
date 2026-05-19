@@ -53,7 +53,7 @@ def blast_split_bill_message(
     per_person_subtotal = per_person_subtotal or {}
     messages: List[Dict] = []
     
-    bank_info = read_all('BankInfo')
+    bank_info = read_all(BANK_INFO_SHEET)
     bank_info = [f"{i.get('Bank')}\na.n {i.get('Atas Nama')}\n{i.get('Nomor Rekening')}" 
                  for i in bank_info if i.get('Bank') and i.get('Atas Nama') and i.get('Nomor Rekening')]
     bank_info = "\n\n".join(bank_info)
@@ -96,7 +96,7 @@ def blast_split_bill_message(
             f"Hi {name}! 🤚\n"
             f"Here's your share for {event_name}:\n"
             f"{details}\n"
-            f"Please send it to:\n{BANK_INFO_SHEET}\n"
+            f"Please send it to:\n{bank_info}\n"
             f"Thanks!"
         )
         entry = {"name": name, "amount": round(amount, 2), "message": text}
