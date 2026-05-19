@@ -1,13 +1,50 @@
 import json
+import base64
 
-from typing import Dict, Any
+from datetime import datetime
 from langchain.messages import AIMessage
+from typing import Any, Dict, List, Optional
+
+from constants.config import TIMEZONE
 
 
-def read_skill_md(file_path: str) -> str:
-    with open(file_path, 'r') as f:
-        content = f.read()
-    return content
+def _datetime_prefix() -> str:
+    now = datetime.now(TIMEZONE)
+    return (
+        f"[Current datetime: {now.strftime('%Y-%m-%d %H:%M:%S %Z')} "
+        f"({now.strftime('%A')})]\n"
+    )
+
+def build_user_message(
+    query: str,
+    image_bytes: Optional[bytes] = None,
+    image_base64: Optional[str] = None,
+    image_mime: str = "image/jpeg",
+) -> Dict[str, Any]:
+    """Build a multimodal user message dict for the agent.
+
+    Accepts either raw image bytes (from an UploadFile) or a pre-encoded
+    base64 string. The current datetime (Asia/Jakarta) is prepended to the
+    query so the agent always has a fresh sense of "now".
+    """
+    query_with_time = f"{_datetime_prefix()}{query}"
+
+    if image_bytes is not None and not image_base64:
+        image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+    if not image_base64:
+        return {"role": "user", "content": query_with_time}
+
+    if image_base64.startswith("data:"):
+        data_url = image_base64
+    else:
+        data_url = f"data:{image_mime};base64,{image_base64}"
+
+    content: List[Dict[str, Any]] = [
+        {"type": "text", "text": query_with_time},
+        {"type": "image_url", "image_url": data_url},
+    ]
+    return {"role": "user", "content": content}
 
 def extract_agent_response(response: dict, session_id: str = None, run_id: str = None) -> Dict[str, Any]:
     """
