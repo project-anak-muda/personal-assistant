@@ -5,10 +5,10 @@ services:
     container_name: pa-bot
     restart: unless-stopped
     env_file:
-      - ./.env
+      - /home/dev-user/rizal/env_files/pa.env
     environment:
       # Path inside the container — must match where the SA file is mounted.
       GOOGLE_SA_PATH: /mnt/service_account.json
     volumes:
       # Mount the service account JSON from the host into /mnt (read-only).
-      - /mnt/service_account.json:/mnt/service_account.json:ro
+      - /home/dev-user/rizal/sa/service_account.json:/mnt/service_account.json:ro

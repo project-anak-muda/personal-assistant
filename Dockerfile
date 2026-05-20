@@ -17,7 +17,4 @@ RUN pip install -r requirements-bot.txt
 
 COPY . .
 
-# Service account JSON is mounted at runtime; keep this in sync with GOOGLE_SA_PATH.
-ENV GOOGLE_SA_PATH=/mnt/service_account.json
-
 CMD ["python", "telegram_bot.py"]
