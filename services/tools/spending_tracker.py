@@ -3,10 +3,11 @@ import os
 from datetime import datetime
 from langchain_core.tools import tool
 from typing import Optional, Dict, List
-from utils.gsheet import append_row, read_all
 
+from utils.helpers import parse_amount
+from utils.gsheet import append_row, read_all
 from constants.config import (
-    SPENDING_SHEET, BUDGET_SHEET, 
+    SPENDING_SHEET, BUDGET_SHEET,
     BUDGET_WARN_THRESHOLD, TIMEZONE
 )
 
@@ -85,10 +86,7 @@ def summarize_spending(
     total = 0.0
     by_category: Dict[str, float] = {}
     for r in filtered:
-        try:
-            amt = float(r.get("amount", 0) or 0)
-        except (TypeError, ValueError):
-            amt = 0.0
+        amt = parse_amount(r.get("amount")) or 0.0
         total += amt
         cat = str(r.get("category", "uncategorized"))
         by_category[cat] = by_category.get(cat, 0.0) + amt
@@ -118,12 +116,9 @@ def _read_monthly_budget() -> float:
 
     for r in rows:
         raw = r.get("monthly_budget") or r.get("budget") or r.get("amount")
-        if raw in (None, ""):
-            continue
-        try:
-            return float(raw)
-        except (TypeError, ValueError):
-            continue
+        value = parse_amount(raw)
+        if value is not None:
+            return value
     return 0.0
 
 @tool
@@ -159,10 +154,7 @@ def check_budget(currency: str = "IDR") -> Dict:
         except ValueError:
             continue
         if month_start <= d <= today:
-            try:
-                month_total += float(r.get("amount", 0) or 0)
-            except (TypeError, ValueError):
-                continue
+            month_total += parse_amount(r.get("amount")) or 0.0
 
     budget = _read_monthly_budget()
     month_total = round(month_total, 2)

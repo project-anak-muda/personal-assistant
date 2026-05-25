@@ -1,3 +1,4 @@
+import re
 import json
 import base64
 
@@ -7,6 +8,45 @@ from typing import Any, Dict, List, Optional
 
 from constants.config import TIMEZONE
 
+
+def parse_amount(raw) -> Optional[float]:
+    """Parse a money value that may be a number or a formatted string.
+
+    Handles Indonesian formatting like "Rp5.000.000", "Rp 5.000.000,50",
+    "5,000,000", "5000000". Returns None if it can't be parsed.
+    """
+    if raw in (None, ""):
+        return None
+    if isinstance(raw, (int, float)):
+        return float(raw)
+
+    s = str(raw).strip()
+    # keep only digits, separators, and a leading minus
+    s = re.sub(r"[^0-9.,-]", "", s)
+    if not s:
+        return None
+
+    has_dot = "." in s
+    has_comma = "," in s
+    if has_dot and has_comma:
+        # the rightmost separator is the decimal point; the other is thousands
+        if s.rfind(",") > s.rfind("."):
+            s = s.replace(".", "").replace(",", ".")   # ID style: 5.000.000,50
+        else:
+            s = s.replace(",", "")                       # EN style: 5,000,000.50
+    elif has_comma:
+        # comma alone -> treat as thousands separator (IDR usually has no cents)
+        s = s.replace(",", "")
+    elif has_dot:
+        # dot alone: if it looks like a thousands separator, drop it
+        if re.fullmatch(r"-?\d{1,3}(\.\d{3})+", s):
+            s = s.replace(".", "")
+        # otherwise leave it as a real decimal point
+
+    try:
+        return float(s)
+    except ValueError:
+        return None
 
 def _datetime_prefix() -> str:
     now = datetime.now(TIMEZONE)
