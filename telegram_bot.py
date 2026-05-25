@@ -153,12 +153,7 @@ async def run() -> None:
                 await asyncio.sleep(3)
 
 if __name__ == "__main__":
-    bank_info = read_all('BankInfo')
-    bank_info = [f"{i.get('Bank')}\na.n {i.get('Atas Nama')}\n{i.get('Nomor Rekening')}" 
-                 for i in bank_info if i.get('Bank') and i.get('Atas Nama') and i.get('Nomor Rekening')]
-    bank_info = "\n\n".join(bank_info)
-    print(bank_info)
-    # try:
-    #     asyncio.run(run())
-    # except KeyboardInterrupt:
-    #     LOGGER.info("Bot stopped.")
+    try:
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        LOGGER.info("Bot stopped.")

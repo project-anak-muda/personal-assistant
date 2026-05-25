@@ -1,11 +1,14 @@
 import os
 
-from datetime import datetime, date
+from datetime import datetime
 from langchain_core.tools import tool
 from typing import Optional, Dict, List
 from utils.gsheet import append_row, read_all
 
-from constants.config import SPENDING_SHEET
+from constants.config import (
+    SPENDING_SHEET, BUDGET_SHEET, 
+    BUDGET_WARN_THRESHOLD, TIMEZONE
+)
 
 
 @tool
@@ -33,7 +36,7 @@ def log_spending(
         Confirmation string.
     """
     if not spend_date:
-        spend_date = date.today().isoformat()
+        spend_date = datetime.now(TIMEZONE).date().isoformat()
 
     append_row(
         SPENDING_SHEET,
@@ -100,4 +103,116 @@ def summarize_spending(
             "end_date": end_date,
             "category": category,
         },
+    }
+
+def _read_monthly_budget() -> float:
+    """Read the monthly budget from the Budget worksheet.
+
+    Expects a worksheet with a `monthly_budget` column. Uses the first
+    non-empty value found. Returns 0.0 if not configured.
+    """
+    try:
+        rows = read_all(BUDGET_SHEET)
+    except Exception:
+        return 0.0
+
+    for r in rows:
+        raw = r.get("monthly_budget") or r.get("budget") or r.get("amount")
+        if raw in (None, ""):
+            continue
+        try:
+            return float(raw)
+        except (TypeError, ValueError):
+            continue
+    return 0.0
+
+@tool
+def check_budget(currency: str = "IDR") -> Dict:
+    """Check whether this month's spending is still within the monthly budget.
+
+    Sums all spending from the 1st of the current month up to today, compares
+    it against the monthly budget (from the Budget worksheet), and flags an
+    alert when usage reaches the warning threshold (default 80%) or exceeds 100%.
+
+    Use this RIGHT AFTER logging a new spend, so the user is warned as soon as
+    they get close to or over budget.
+
+    Args:
+        currency: Currency code for display (default "IDR").
+
+    Returns:
+        Dict with month_total, budget, percent_used, status
+        ("ok" | "warning" | "over"), `alert` (bool), and a human-readable
+        `summary` to surface in the final response.
+    """
+    today = datetime.now(TIMEZONE).date()
+    month_start = today.replace(day=1)
+
+    records: List[dict] = read_all(SPENDING_SHEET)
+    month_total = 0.0
+    for r in records:
+        d_str = str(r.get("date", "")).strip()
+        if not d_str:
+            continue
+        try:
+            d = datetime.strptime(d_str, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if month_start <= d <= today:
+            try:
+                month_total += float(r.get("amount", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+
+    budget = _read_monthly_budget()
+    month_total = round(month_total, 2)
+
+    if budget <= 0:
+        return {
+            "month": today.strftime("%Y-%m"),
+            "month_total": month_total,
+            "budget": 0,
+            "percent_used": None,
+            "status": "no_budget",
+            "alert": False,
+            "summary": (
+                f"This month's spending so far: {currency} {month_total:,.2f}. "
+                f"No monthly budget is set, so I can't check it."
+            ),
+        }
+
+    percent = month_total / budget
+    remaining = budget - month_total
+
+    if percent >= 1.0:
+        status = "over"
+        alert = True
+        emoji = "🚨"
+        headline = f"{emoji} OVER BUDGET! You've used {percent*100:.0f}% of your monthly budget."
+    elif percent >= BUDGET_WARN_THRESHOLD:
+        status = "warning"
+        alert = True
+        emoji = "⚠️"
+        headline = f"{emoji} Heads up: you've used {percent*100:.0f}% of your monthly budget."
+    else:
+        status = "ok"
+        alert = False
+        emoji = "✅"
+        headline = f"{emoji} You're within budget ({percent*100:.0f}% used)."
+
+    summary = (
+        f"{headline}\n"
+        f"Spent this month: {currency} {month_total:,.2f} / {currency} {budget:,.2f}\n"
+        f"Remaining: {currency} {remaining:,.2f}"
+    )
+
+    return {
+        "month": today.strftime("%Y-%m"),
+        "month_total": month_total,
+        "budget": round(budget, 2),
+        "remaining": round(remaining, 2),
+        "percent_used": round(percent * 100, 1),
+        "status": status,
+        "alert": alert,
+        "summary": summary,
     }
