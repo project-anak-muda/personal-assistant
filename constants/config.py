@@ -52,5 +52,9 @@ SCOPES = [
 SPENDING_SHEET = os.getenv("SPENDING_WORKSHEET", "Spending")
 BANK_INFO_SHEET = os.getenv("BANK_INFO_WORKSHEET", "BankInfo")
 WHITELIST_USERS_SHEET = os.getenv("WHITELIST_USERS_WORKSHEET", "WhitelistUsername")
+BUDGET_SHEET = os.getenv("BUDGET_WORKSHEET", "Budget")
+
+# Alert thresholds (as fractions of the monthly budget)
+BUDGET_WARN_THRESHOLD = float(os.getenv("BUDGET_WARN_THRESHOLD", "0.8"))
 
 POLL_TIMEOUT = 30
