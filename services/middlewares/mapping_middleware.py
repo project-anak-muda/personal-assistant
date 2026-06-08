@@ -1,7 +1,9 @@
-from typing import List
+from typing import List, Any
+from langgraph.runtime import Runtime
 from langchain.agents.middleware import (
     ModelCallLimitMiddleware, ToolCallLimitMiddleware, 
-    SummarizationMiddleware, HumanInTheLoopMiddleware
+    SummarizationMiddleware, HumanInTheLoopMiddleware,
+    after_model, AgentState
 )
 
 from models.llm import get_model
@@ -39,6 +41,16 @@ def compile_hitl(
         
         return hitl
     
+@after_model
+def handle_empty_response(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    """Handle empty string response dari model."""
+    messages = state["messages"]
+    last_message = messages[-1]
+    if hasattr(last_message, 'content') and last_message.content == "":
+        last_message.content = "panggil tool"
+        return {"messages": [last_message]}
+    return None
+    
 MAPPING_MIDDLEWARE = {
     "model_call_limit": \
         ModelCallLimitMiddleware(
@@ -60,4 +72,6 @@ MAPPING_MIDDLEWARE = {
         ),
     "hitl": \
         compile_hitl,
+    "handle_empty_response": \
+        handle_empty_response,
 }

@@ -41,7 +41,8 @@ MIDDLEWARE_LIST_TOOLS = {}
 
 USED_MIDDLEWARE = [
     'tool_call_limit',
-    'hitl'
+    'hitl',
+    'handle_empty_response',
 ]
 
 SCOPES = [
@@ -57,4 +58,4 @@ BUDGET_SHEET = os.getenv("BUDGET_WORKSHEET", "Budget")
 # Alert thresholds (as fractions of the monthly budget)
 BUDGET_WARN_THRESHOLD = float(os.getenv("BUDGET_WARN_THRESHOLD", "0.8"))
 
-POLL_TIMEOUT = 30
+POLL_TIMEOUT = 300
