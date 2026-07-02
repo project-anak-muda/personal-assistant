@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 import httpx
 import asyncio
@@ -118,7 +119,9 @@ async def run() -> None:
             try:
                 params = {
                     "timeout": POLL_TIMEOUT,
-                    "allowed_updates": ["message", "edited_message"],
+                    # Telegram expects a JSON-encoded array string here, not
+                    # repeated query params (which is what httpx emits for a list).
+                    "allowed_updates": json.dumps(["message", "edited_message"]),
                 }
                 if offset is not None:
                     params["offset"] = offset

@@ -137,7 +137,14 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
+
+# Service account credentials — never commit these
+service_account.json
+*-service-account*.json
+gen-lang-client-*.json
 .venv
 env/
 venv/

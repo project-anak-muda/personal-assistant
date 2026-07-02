@@ -1,0 +1,23 @@
+# Local (Mac / Docker Desktop) run — LLM server runs natively on the host.
+# Usage: docker compose -f docker-compose.local.yml up --build
+# The remote deploy stays in docker-compose.yml (unchanged).
+services:
+  telegram-bot:
+    build: .
+    image: personal-assistant:latest
+    container_name: pa-bot
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      # SA file location inside the container (matches the mount below).
+      GOOGLE_SA_PATH: /mnt/service_account.json
+      # Reach the native LLM server on the Mac. Overrides LOCAL_LLM_BASE_URL
+      # from .env (which uses localhost — correct only for host runs, not containers).
+      LOCAL_LLM_BASE_URL: http://host.docker.internal:8080/v1
+    extra_hosts:
+      # Predefined on Docker Desktop (Mac); required on Linux engines. Harmless here.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Mount the local service account JSON into /mnt (read-only).
+      - ./service_account.json:/mnt/service_account.json:ro

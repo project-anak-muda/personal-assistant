@@ -24,9 +24,9 @@ The bot connects to Telegram via **long polling** (no public URL, no webhook, no
 personal_assistance/
 ├── telegram_bot.py            # Standalone long-polling Telegram bot (main entry)
 ├── main_client.py             # Optional FastAPI server (HTTP endpoints)
-├── Dockerfile                 # Container build for the Telegram bot
-├── requirements-bot.txt       # Slim deps for the bot-only deployment
-├── requirements.txt           # Full deps (bot + FastAPI)
+├── Dockerfile                 # Container build for the Telegram bot (uv-based)
+├── pyproject.toml             # All deps (uv): core = bot; `api` group = FastAPI extras
+├── uv.lock                    # Pinned, reproducible lockfile
 ├── constants/
 │   ├── config.py              # Worksheet names, SCOPES, TIMEZONE, POLL_TIMEOUT
 │   ├── prompt.py              # Agent system prompt
@@ -103,11 +103,12 @@ All three worksheet names default to the values above if you omit the env var �
 
 ### 4. Install & run (local)
 
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). It creates the
+virtualenv and installs the exact versions from `uv.lock` for you:
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-bot.txt
-python telegram_bot.py
+uv sync            # create .venv and install locked deps
+uv run telegram_bot.py
 ```
 
 Open Telegram, message your bot, and you're live.
@@ -156,11 +157,12 @@ The agent extracts items from the image, calls `split_bill`, then `blast_split_b
 
 ## Optional: FastAPI Mode
 
-If you also want HTTP endpoints (e.g. for a custom UI), use the full `requirements.txt` and run:
+The FastAPI server is a scratch/experimentation surface. Its extra deps live in
+the `api` dependency group (not installed for the bot/inference image). To run it:
 
 ```bash
-pip install -r requirements.txt
-python main_client.py   # listens on :2707
+uv sync --group api
+uv run main_client.py   # listens on :2707
 ```
 
 Endpoints (see [routers/single_agent.py](routers/single_agent.py)):
@@ -193,7 +195,7 @@ requests.post(
   curl "https://api.telegram.org/bot<TOKEN>/deleteWebhook"
   ```
 - **Wrong "now" / timezone** — the datetime prefix is hardcoded to `Asia/Jakarta` in `utils/helpers.py`. Change `TIMEZONE` there if needed.
-- **Container can't find timezone** — `tzdata` is already in `requirements-bot.txt`; reinstall if you switch base images.
+- **Container can't find timezone** — `tzdata` is already a dependency in `pyproject.toml`; reinstall if you switch base images.
 
 ## License
 
