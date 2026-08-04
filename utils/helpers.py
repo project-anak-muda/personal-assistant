@@ -55,6 +55,18 @@ def _datetime_prefix() -> str:
         f"({now.strftime('%A')})]\n"
     )
 
+def build_thread_id(chat_id: Any, prefix: str = "tg") -> str:
+    """Build a per-chat, per-day conversation thread id.
+
+    Rotating the thread daily bounds how much history one conversation can
+    accumulate. Without it a chat keeps a single thread forever, so every
+    message resends an ever-growing transcript to the model — cost grows with
+    no ceiling and the context window eventually overflows. A bill split
+    yesterday is never context for today, so a day is the natural window.
+    """
+    today = datetime.now(TIMEZONE).date().isoformat()
+    return f"{prefix}-{chat_id}-{today}"
+
 def build_user_message(
     query: str,
     image_bytes: Optional[bytes] = None,

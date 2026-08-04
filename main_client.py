@@ -7,28 +7,32 @@ from fastapi import FastAPI, status
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 
-from routers import all_router
+from routers.all import all_router
 from constants.log import LOGGER
 from services.agent_manager import make_graph_single
+from services.checkpointer import checkpointer_scope
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
     app.context = {}
-    
-    app.context["single_agent"] = await make_graph_single()
-    
-    # Startup
-    LOGGER.info("Starting FastAPI application")
-    
-    yield
-    
-    # Shutdown - Clean up resources
-    LOGGER.info("Shutting down FastAPI application")
-    
-    app.context.clear()
-    
+
+    # Hold the checkpointer pool open for the app's whole lifetime — the agent
+    # reads and writes checkpoints on every request, not just at startup.
+    async with checkpointer_scope() as checkpointer:
+        app.context["single_agent"] = await make_graph_single(checkpointer)
+
+        # Startup
+        LOGGER.info("Starting FastAPI application")
+
+        yield
+
+        # Shutdown - Clean up resources
+        LOGGER.info("Shutting down FastAPI application")
+
+        app.context.clear()
+
     # Force garbage collection
     gc.collect()
 

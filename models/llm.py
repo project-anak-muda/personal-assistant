@@ -1,11 +1,15 @@
 import os
 
+from typing import Optional
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 
-def get_model(provider: str = "local"):
-    provider = provider.lower()
+def get_model(provider: Optional[str] = None):
+    # Resolved from the environment so the deployed image can pick a provider
+    # without a code change: Cloud Run has no local LLM to reach, so it sets
+    # LLM_PROVIDER=google. Defaults to "local" to keep dev behaviour unchanged.
+    provider = (provider or os.getenv("LLM_PROVIDER", "local")).lower()
     
     if provider == "google":
         return get_model_google()

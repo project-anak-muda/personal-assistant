@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+"""Router package.
 
-from routers.single_agent import single_agent_router
+Intentionally empty: importing one router must not drag in every other one.
+`webhook_app.py` imports only `routers.telegram`, and pulling
+`routers.single_agent` in behind its back would force `python-multipart` into
+the deployed image for an endpoint that app does not even serve.
 
-
-all_router = APIRouter()
-
-all_router.include_router(single_agent_router)
+The aggregate router for `main_client.py` lives in `routers/all.py`.
+"""
