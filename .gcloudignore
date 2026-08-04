@@ -1,0 +1,26 @@
+# What `gcloud run deploy --source .` must NOT upload to Cloud Build.
+#
+# gcloud falls back to .gitignore when this file is absent; spelling it out
+# keeps the upload deterministic instead of depending on that fallback.
+# Credentials are deliberately excluded — the deployed service reads them from
+# Secret Manager, so they never need to leave this machine.
+
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+service_account.json
+*-service-account*.json
+gen-lang-client-*.json
+
+.venv
+venv
+__pycache__/
+*.pyc
+
+.vscode
+.idea
+*.ipynb
+imgs/

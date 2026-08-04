@@ -7,6 +7,9 @@ services:
     image: personal-assistant:latest
     container_name: pa-bot
     restart: unless-stopped
+    # Override the image default (webhook_app.py, for Cloud Run): an always-on
+    # host uses long polling and needs no public HTTPS endpoint.
+    command: python telegram_bot.py
     env_file:
       - ./.env
     environment:

@@ -19,9 +19,15 @@ RUN apt-get update \
 
 # Install dependencies first (cached layer) from the lockfile only.
 COPY pyproject.toml uv.lock .python-version ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+# No BuildKit cache mount here: Cloud Build's default `gcr.io/cloud-builders/docker`
+# runs the legacy builder, which rejects `RUN --mount`. It would buy nothing there
+# anyway — each Cloud Build run starts with an empty cache. `--no-cache` then keeps
+# uv's download cache out of the layer, which trims the pushed image.
+RUN uv sync --frozen --no-dev --no-cache
 
 COPY . .
 
-CMD ["python", "telegram_bot.py"]
+# Default to the webhook transport, which is what Cloud Run runs. The compose
+# files override this with `python telegram_bot.py` for always-on hosts, where
+# long polling needs no public HTTPS endpoint.
+CMD ["python", "webhook_app.py"]

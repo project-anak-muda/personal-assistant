@@ -1,6 +1,12 @@
 .git
 .gitignore
 .env
+
+# Credentials must never be baked into an image — anyone who can pull the
+# image can read them straight out of the layer.
+service_account.json
+*-service-account*.json
+gen-lang-client-*.json
 *.pyc
 __pycache__
 .venv
